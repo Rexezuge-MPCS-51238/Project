@@ -1,7 +1,9 @@
 'use client';
 
 import { useState } from 'react';
+import AuditLogsTab from './AuditLogsTab';
 import OnboardingWizard from './OnboardingWizard';
+import TeamsTab from './TeamsTab';
 
 interface LoadingButtonProps {
   onClick: () => Promise<void> | void;
@@ -43,21 +45,35 @@ function LoadingButton({ onClick, disabled = false, className = '', children, ty
   );
 }
 
-export default function AdminPage() {
-  const [activeTab, setActiveTab] = useState('wizard');
+interface AdminPageProps {
+  activeTab?: string;
+  onTabChange?: (tab: string) => void;
+}
+
+export default function AdminPage({ activeTab: activeTabProp, onTabChange }: AdminPageProps = {}) {
+  const [localActiveTab, setLocalActiveTab] = useState('wizard');
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const activeTab = activeTabProp || localActiveTab;
 
   const showMessage = (type: 'success' | 'error', text: string) => {
     setMessage({ type, text });
     setTimeout(() => setMessage(null), 5000);
   };
 
+  const setActiveTab = (tab: string) => {
+    setLocalActiveTab(tab);
+    onTabChange?.(tab);
+  };
+
   const tabs = [
-    { id: 'wizard', label: 'Setup Wizard' },
-    { id: 'credentials', label: 'Credentials' },
-    { id: 'access', label: 'User Access' },
-    { id: 'accounts', label: 'Account Nicknames' },
-    { id: 'roleconfig', label: 'Role Config' },
+    { id: 'wizard', label: 'Setup Wizard', group: 'Setup' },
+    { id: 'credentials', label: 'Credentials', group: 'Configuration' },
+    { id: 'accounts', label: 'Account Nicknames', group: 'Configuration' },
+    { id: 'roleconfig', label: 'Role Config', group: 'Configuration' },
+    { id: 'access', label: 'User Access', group: 'Access' },
+    { id: 'teams', label: 'Teams', group: 'Access' },
+    { id: 'auditlogs', label: 'Audit Logs', group: 'System' },
+    { id: 'maintenance', label: 'Maintenance', group: 'System' },
   ];
 
   return (
@@ -75,18 +91,27 @@ export default function AdminPage() {
         </div>
       )}
 
-      <div className="mb-6">
-        <div className="flex space-x-1 bg-gray-800 p-1 rounded">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`px-4 py-2 rounded transition-colors ${
-                activeTab === tab.id ? 'bg-blue-600 text-white' : 'text-gray-300 hover:text-white'
-              }`}
-            >
-              {tab.label}
-            </button>
+      <div className="mb-6 bg-gray-800 p-4 rounded">
+        <div className="grid gap-4 md:grid-cols-4">
+          {['Setup', 'Configuration', 'Access', 'System'].map((group) => (
+            <div key={group}>
+              <div className="px-2 pb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">{group}</div>
+              <div className="space-y-1">
+                {tabs
+                  .filter((tab) => tab.group === group)
+                  .map((tab) => (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveTab(tab.id)}
+                      className={`w-full px-3 py-2 text-left rounded transition-colors ${
+                        activeTab === tab.id ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                      }`}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
+              </div>
+            </div>
           ))}
         </div>
       </div>
@@ -96,6 +121,9 @@ export default function AdminPage() {
       {activeTab === 'access' && <AccessTab showMessage={showMessage} />}
       {activeTab === 'accounts' && <AccountsTab showMessage={showMessage} />}
       {activeTab === 'roleconfig' && <RoleConfigTab showMessage={showMessage} />}
+      {activeTab === 'teams' && <TeamsTab showMessage={showMessage} />}
+      {activeTab === 'auditlogs' && <AuditLogsTab showMessage={showMessage} />}
+      {activeTab === 'maintenance' && <MaintenanceTab showMessage={showMessage} />}
     </div>
   );
 }
@@ -697,6 +725,67 @@ function RoleConfigTab({ showMessage }: { showMessage: (type: 'success' | 'error
           </LoadingButton>
         </div>
       </form>
+    </div>
+  );
+}
+
+function MaintenanceTab({ showMessage }: { showMessage: (type: 'success' | 'error', text: string) => void }) {
+  const [result, setResult] = useState<{ deletedCounts: Record<string, number>; totalDeleted: number } | null>(null);
+
+  const handleCleanup = async () => {
+    try {
+      const response = await fetch('/api/admin/maintenance/cleanup-orphaned', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      });
+      const responseText = await response.text();
+
+      if (response.ok) {
+        const data = JSON.parse(responseText) as { deletedCounts: Record<string, number>; totalDeleted: number };
+        setResult(data);
+        showMessage('success', `Cleanup completed. Deleted ${data.totalDeleted} orphaned rows.`);
+      } else {
+        let errorMessage = 'Failed to clean up orphaned data';
+        try {
+          const error = JSON.parse(responseText);
+          errorMessage = error.Exception?.Message || error.message || errorMessage;
+        } catch {
+          errorMessage = `HTTP ${response.status}: ${responseText}`;
+        }
+        showMessage('error', errorMessage);
+      }
+    } catch (err) {
+      showMessage('error', `Network error: ${err instanceof Error ? err.message : 'Unknown error'}`);
+    }
+  };
+
+  return (
+    <div className="bg-gray-800 p-6 rounded">
+      <h3 className="text-xl font-semibold mb-4">Maintenance</h3>
+      <p className="text-gray-300 mb-6">
+        Remove orphaned account, role configuration, and team-account rows left behind after access changes.
+      </p>
+      <LoadingButton onClick={handleCleanup} className="bg-red-600 hover:bg-red-700 px-4 py-2 rounded text-white">
+        Run Cleanup
+      </LoadingButton>
+      {result && (
+        <div className="mt-6 rounded bg-gray-900 p-4">
+          <div className="text-sm font-semibold text-gray-200">Last cleanup result</div>
+          <div className="mt-3 space-y-2 text-sm text-gray-300">
+            {Object.entries(result.deletedCounts).map(([table, count]) => (
+              <div key={table} className="flex justify-between">
+                <span>{table}</span>
+                <span>{count}</span>
+              </div>
+            ))}
+            <div className="flex justify-between border-t border-gray-700 pt-2 font-semibold text-white">
+              <span>Total</span>
+              <span>{result.totalDeleted}</span>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

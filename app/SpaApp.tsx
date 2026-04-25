@@ -5,16 +5,21 @@ import Unauthorized from '../components/Unauthorized';
 
 type View = 'accounts' | 'admin';
 
-function parseRoute(): { view: View } {
+function parseRoute(): { view: View; adminTab?: string } {
   const path: string = window.location.pathname.replace(/\/$/, '') || '/';
-  return { view: path === '/admin' ? 'admin' : 'accounts' };
+  if (path === '/admin' || path.startsWith('/admin/')) {
+    return { view: 'admin', adminTab: path.split('/')[2] || undefined };
+  }
+  return { view: 'accounts' };
 }
 
 export default function SpaApp() {
   const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+  const [isDemoMode, setIsDemoMode] = useState(false);
   const [userEmail, setUserEmail] = useState('');
   const [currentView, setCurrentView] = useState<View>(() => parseRoute().view);
+  const [adminTab, setAdminTab] = useState<string | undefined>(() => parseRoute().adminTab);
   const [showHidden, setShowHidden] = useState(false);
   const [filterOpen, setFilterOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -28,16 +33,28 @@ export default function SpaApp() {
   });
   const [totalAccounts, setTotalAccounts] = useState(0);
 
-  const navigateTo = useCallback((view: View) => {
+  const navigateTo = useCallback((view: View, tab?: string) => {
     setCurrentView(view);
-    const path = view === 'admin' ? '/admin' : '/';
+    setAdminTab(view === 'admin' ? tab : undefined);
+    const path = view === 'admin' && tab ? `/admin/${tab}` : view === 'admin' ? '/admin' : '/';
     if (window.location.pathname !== path) {
       history.pushState(null, '', path);
     }
   }, []);
 
+  const handleAdminTabChange = useCallback(
+    (tab: string) => {
+      navigateTo('admin', tab);
+    },
+    [navigateTo],
+  );
+
   useEffect(() => {
-    const onPopState = () => setCurrentView(parseRoute().view);
+    const onPopState = () => {
+      const route = parseRoute();
+      setCurrentView(route.view);
+      setAdminTab(route.adminTab);
+    };
     window.addEventListener('popstate', onPopState);
     return () => window.removeEventListener('popstate', onPopState);
   }, []);
@@ -57,9 +74,10 @@ export default function SpaApp() {
         if (response.status === 401) {
           setIsAuthorized(false);
         } else if (response.ok) {
-          const userData = (await response.json()) as { isSuperAdmin?: boolean; email?: string };
+          const userData = (await response.json()) as { isSuperAdmin?: boolean; email?: string; demoMode?: boolean };
           setIsAuthorized(true);
           setIsSuperAdmin(userData.isSuperAdmin || false);
+          setIsDemoMode(userData.demoMode || false);
           setUserEmail(userData.email || '');
         } else {
           setIsAuthorized(false);
@@ -108,11 +126,16 @@ export default function SpaApp() {
 
   return (
     <div className="bg-gray-900 min-h-screen text-white">
+      {isDemoMode && (
+        <div className="bg-gradient-to-r from-yellow-500 to-amber-500 text-black text-center py-2 font-semibold text-sm sticky top-0 z-50 shadow-md">
+          Demo Mode - data shown is for demonstration purposes only. Admin operations are disabled.
+        </div>
+      )}
       <SpaNavbar isSuperAdmin={isSuperAdmin} currentView={currentView} setCurrentView={navigateTo} userEmail={userEmail} />
       <div className="max-w-6xl mx-auto px-6 py-8">
         <div key={currentView} className="animate-fade-in-up">
           {currentView === 'admin' && isSuperAdmin ? (
-            <AdminPage />
+            <AdminPage activeTab={adminTab} onTabChange={handleAdminTabChange} />
           ) : (
             <>
               <div className="flex items-center mb-6 gap-4">
@@ -272,7 +295,7 @@ function SpaNavbar({
 }: {
   isSuperAdmin: boolean;
   currentView: View;
-  setCurrentView: (view: View) => void;
+  setCurrentView: (view: View, tab?: string) => void;
   userEmail: string;
 }) {
   return (
