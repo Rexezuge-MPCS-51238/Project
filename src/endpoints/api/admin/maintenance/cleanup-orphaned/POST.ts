@@ -1,5 +1,9 @@
 import { AwsAccountsDAO } from '@/dao/AwsAccountsDAO';
+import { CostDataDAO } from '@/dao/CostDataDAO';
+import { DataCollectionConfigDAO } from '@/dao/DataCollectionConfigDAO';
+import { ResourceInventoryDAO } from '@/dao/ResourceInventoryDAO';
 import { RoleConfigsDAO } from '@/dao/RoleConfigsDAO';
+import { SpendAlertDAO } from '@/dao/SpendAlertDAO';
 import { TeamAccountsDAO } from '@/dao/TeamAccountsDAO';
 import { IAdminActivityAPIRoute } from '@/endpoints/IAdminActivityAPIRoute';
 import type { ActivityContext, IAdminEnv, IRequest, IResponse } from '@/endpoints/IAdminActivityAPIRoute';
@@ -25,8 +29,12 @@ class CleanupOrphanedDataRoute extends IAdminActivityAPIRoute<
                 deletedCounts: {
                   type: 'object' as const,
                   properties: {
+                    dataCollectionConfig: { type: 'integer' as const },
                     roleConfigs: { type: 'integer' as const },
                     teamAccounts: { type: 'integer' as const },
+                    spendAlerts: { type: 'integer' as const },
+                    costData: { type: 'integer' as const },
+                    resourceInventory: { type: 'integer' as const },
                     awsAccounts: { type: 'integer' as const },
                   },
                 },
@@ -38,8 +46,12 @@ class CleanupOrphanedDataRoute extends IAdminActivityAPIRoute<
                 summary: 'Nothing to clean up',
                 value: {
                   deletedCounts: {
+                    dataCollectionConfig: 0,
                     roleConfigs: 0,
                     teamAccounts: 0,
+                    spendAlerts: 0,
+                    costData: 0,
+                    resourceInventory: 0,
                     awsAccounts: 0,
                   },
                   totalDeleted: 0,
@@ -49,11 +61,15 @@ class CleanupOrphanedDataRoute extends IAdminActivityAPIRoute<
                 summary: 'Orphaned rows removed',
                 value: {
                   deletedCounts: {
+                    dataCollectionConfig: 1,
                     roleConfigs: 2,
                     teamAccounts: 0,
+                    spendAlerts: 1,
+                    costData: 30,
+                    resourceInventory: 14,
                     awsAccounts: 1,
                   },
-                  totalDeleted: 3,
+                  totalDeleted: 49,
                 },
               },
             },
@@ -128,16 +144,25 @@ class CleanupOrphanedDataRoute extends IAdminActivityAPIRoute<
   ): Promise<CleanupOrphanedDataResponse> {
     const db: D1DatabaseSession = env.AccessBridgeDB;
 
+    const dataCollectionConfig: number = await new DataCollectionConfigDAO(db).deleteOrphaned();
     const roleConfigs: number = await new RoleConfigsDAO(db).deleteOrphaned();
     const teamAccounts: number = await new TeamAccountsDAO(db).deleteOrphaned();
+    const spendAlerts: number = await new SpendAlertDAO(db).deleteOrphaned();
+    const costData: number = await new CostDataDAO(db).deleteOrphaned();
+    const resourceInventory: number = await new ResourceInventoryDAO(db).deleteOrphaned();
     const awsAccounts: number = await new AwsAccountsDAO(db).deleteOrphaned();
 
     const deletedCounts: DeletedCounts = {
+      dataCollectionConfig,
       roleConfigs,
       teamAccounts,
+      spendAlerts,
+      costData,
+      resourceInventory,
       awsAccounts,
     };
-    const totalDeleted: number = roleConfigs + teamAccounts + awsAccounts;
+    const totalDeleted: number =
+      dataCollectionConfig + roleConfigs + teamAccounts + spendAlerts + costData + resourceInventory + awsAccounts;
 
     return { deletedCounts, totalDeleted };
   }
@@ -147,8 +172,12 @@ class CleanupOrphanedDataRoute extends IAdminActivityAPIRoute<
 interface CleanupOrphanedDataRequest extends IRequest {}
 
 interface DeletedCounts {
+  dataCollectionConfig: number;
   roleConfigs: number;
   teamAccounts: number;
+  spendAlerts: number;
+  costData: number;
+  resourceInventory: number;
   awsAccounts: number;
 }
 

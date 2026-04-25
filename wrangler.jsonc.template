@@ -1,11 +1,11 @@
 {
-  // "$version": 1766288169,
-  // "$minimumVersion": 1766030299,
+  // "$version": 1776292445,
+  // "$minimumVersion": 1776258590,
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "aws-access-bridge",
-  "main": ".open-next/worker.js",
+  "main": "src/index.ts",
   "compatibility_date": "2025-11-29",
-  "compatibility_flags": ["nodejs_compat"],
+  "compatibility_flags": [],
   "preview_urls": false,
   "workers_dev": true,
   "minify": true,
@@ -27,8 +27,7 @@
     "mode": "off",
   },
   "assets": {
-    "directory": ".open-next/assets",
-    "binding": "ASSETS",
+    "directory": "./app/dist/",
   },
   "services": [
     {
@@ -68,6 +67,8 @@
     "MAX_TOKENS_PER_USER": "5",
     "MAX_TOKEN_EXPIRY_DAYS": "90",
     "PRINCIPAL_TRUST_CHAIN_LIMIT": "3",
+    "AUDIT_LOG_RETENTION_DAYS": "90",
+    "DEMO_MODE": "false",
   },
   "triggers": {
     "crons": ["*/10 * * * *"],

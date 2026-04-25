@@ -10,6 +10,7 @@ local/
 # Generated src directory
 src/generated-src
 src/generated-src/*
+src/generated/
 
 # Logs
 
@@ -184,3 +185,7 @@ dist
 .dev.vars
 .wrangler/
 tsconfig.tsbuildinfo
+
+# OpenAI Codex
+
+.codex
