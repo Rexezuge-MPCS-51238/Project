@@ -1,11 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { GetCurrentUserRoute as OriginalGetCurrentUserRoute } from './api/user/me/GET';
 import { GenerateConsoleUrlRoute as OriginalGenerateConsoleUrlRoute } from './api/aws/console/POST';
 import { AssumeRoleRoute as OriginalAssumeRoleRoute } from './api/aws/assume-role/POST';
 import { FederateRoute as OriginalFederateRoute } from './api/aws/federate/GET';
 import { ListAssumablesRoute as OriginalListAssumablesRoute } from './api/user/assumables/GET';
 import { SearchAccountsRoute as OriginalSearchAccountsRoute } from './api/user/assumables/search/GET';
+import { GetCurrentUserRoute as OriginalGetCurrentUserRoute } from './api/user/me/GET';
 import { FavoriteAccountRoute as OriginalFavoriteAccountRoute } from './api/user/favorites/POST';
 import { UnfavoriteAccountRoute as OriginalUnfavoriteAccountRoute } from './api/user/favorites/DELETE';
 import { StoreCredentialRoute as OriginalStoreCredentialRoute } from './api/admin/credentials/POST';
@@ -27,6 +27,15 @@ import { ValidateCredentialsRoute as OriginalValidateCredentialsRoute } from './
 import { TestCredentialChainRoute as OriginalTestCredentialChainRoute } from './api/admin/credentials/test-chain/POST';
 import { ListAccountRolesRoute as OriginalListAccountRolesRoute } from './api/admin/account/roles/POST';
 import { ListAuditLogsRoute as OriginalListAuditLogsRoute } from './api/admin/audit-logs/GET';
+import { GetCostSummaryRoute as OriginalGetCostSummaryRoute } from './api/cost/summary/GET';
+import { GetAccountCostRoute as OriginalGetAccountCostRoute } from './api/cost/account/GET';
+import { GetCostTrendsRoute as OriginalGetCostTrendsRoute } from './api/cost/trends/GET';
+import { CreateSpendAlertRoute as OriginalCreateSpendAlertRoute } from './api/admin/cost/alerts/POST';
+import { DeleteSpendAlertRoute as OriginalDeleteSpendAlertRoute } from './api/admin/cost/alerts/DELETE';
+import { EnableDataCollectionRoute as OriginalEnableDataCollectionRoute } from './api/admin/collection/config/POST';
+import { DisableDataCollectionRoute as OriginalDisableDataCollectionRoute } from './api/admin/collection/config/DELETE';
+import { ListResourcesRoute as OriginalListResourcesRoute } from './api/resources/GET';
+import { GetResourceSummaryRoute as OriginalGetResourceSummaryRoute } from './api/resources/summary/GET';
 import { CreateTeamRoute as OriginalCreateTeamRoute } from './api/admin/team/POST';
 import { DeleteTeamRoute as OriginalDeleteTeamRoute } from './api/admin/team/DELETE';
 import { ListTeamsRoute as OriginalListTeamsRoute } from './api/admin/teams/GET';
@@ -40,12 +49,12 @@ import { RemoveTeamAccountRoute as OriginalRemoveTeamAccountRoute } from './api/
 import { ListTeamAccountsRoute as OriginalListTeamAccountsRoute } from './api/admin/team/accounts/GET';
 import { CleanupOrphanedDataRoute as OriginalCleanupOrphanedDataRoute } from './api/admin/maintenance/cleanup-orphaned/POST';
 
-export const GetCurrentUserRoute: any = OriginalGetCurrentUserRoute;
 export const GenerateConsoleUrlRoute: any = OriginalGenerateConsoleUrlRoute;
 export const AssumeRoleRoute: any = OriginalAssumeRoleRoute;
 export const FederateRoute: any = OriginalFederateRoute;
 export const ListAssumablesRoute: any = OriginalListAssumablesRoute;
 export const SearchAccountsRoute: any = OriginalSearchAccountsRoute;
+export const GetCurrentUserRoute: any = OriginalGetCurrentUserRoute;
 export const FavoriteAccountRoute: any = OriginalFavoriteAccountRoute;
 export const UnfavoriteAccountRoute: any = OriginalUnfavoriteAccountRoute;
 export const StoreCredentialRoute: any = OriginalStoreCredentialRoute;
@@ -67,6 +76,15 @@ export const ValidateCredentialsRoute: any = OriginalValidateCredentialsRoute;
 export const TestCredentialChainRoute: any = OriginalTestCredentialChainRoute;
 export const ListAccountRolesRoute: any = OriginalListAccountRolesRoute;
 export const ListAuditLogsRoute: any = OriginalListAuditLogsRoute;
+export const GetCostSummaryRoute: any = OriginalGetCostSummaryRoute;
+export const GetAccountCostRoute: any = OriginalGetAccountCostRoute;
+export const GetCostTrendsRoute: any = OriginalGetCostTrendsRoute;
+export const CreateSpendAlertRoute: any = OriginalCreateSpendAlertRoute;
+export const DeleteSpendAlertRoute: any = OriginalDeleteSpendAlertRoute;
+export const EnableDataCollectionRoute: any = OriginalEnableDataCollectionRoute;
+export const DisableDataCollectionRoute: any = OriginalDisableDataCollectionRoute;
+export const ListResourcesRoute: any = OriginalListResourcesRoute;
+export const GetResourceSummaryRoute: any = OriginalGetResourceSummaryRoute;
 export const CreateTeamRoute: any = OriginalCreateTeamRoute;
 export const DeleteTeamRoute: any = OriginalDeleteTeamRoute;
 export const ListTeamsRoute: any = OriginalListTeamsRoute;

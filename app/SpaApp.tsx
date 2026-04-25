@@ -1,16 +1,32 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import AccountList from '../components/AccountList';
 import AdminPage from '../components/AdminPage';
+import CostDashboard from '../components/CostDashboard';
+import ResourceInventory from '../components/ResourceInventory';
 import Unauthorized from '../components/Unauthorized';
 
-type View = 'accounts' | 'admin';
+type View = 'accounts' | 'costs' | 'resources' | 'admin';
+
+const PATH_TO_VIEW: Record<string, View> = {
+  '/': 'accounts',
+  '/costs': 'costs',
+  '/resources': 'resources',
+};
+
+const VIEW_TO_PATH: Record<View, string> = {
+  accounts: '/',
+  costs: '/costs',
+  resources: '/resources',
+  admin: '/admin',
+};
 
 function parseRoute(): { view: View; adminTab?: string } {
   const path: string = window.location.pathname.replace(/\/$/, '') || '/';
   if (path === '/admin' || path.startsWith('/admin/')) {
-    return { view: 'admin', adminTab: path.split('/')[2] || undefined };
+    const tab: string | undefined = path.split('/')[2] || undefined;
+    return { view: 'admin', adminTab: tab };
   }
-  return { view: 'accounts' };
+  return { view: PATH_TO_VIEW[path] ?? 'accounts' };
 }
 
 export default function SpaApp() {
@@ -33,10 +49,22 @@ export default function SpaApp() {
   });
   const [totalAccounts, setTotalAccounts] = useState(0);
 
+  const handleSetTotalAccounts = useCallback((count: number) => {
+    setTotalAccounts(count);
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem('aws-access-bridge-page-size', pageSize.toString());
+  }, [pageSize]);
+
+  useEffect(() => {
+    sessionStorage.setItem('aws-access-bridge-current-page', currentPage.toString());
+  }, [currentPage]);
+
   const navigateTo = useCallback((view: View, tab?: string) => {
     setCurrentView(view);
     setAdminTab(view === 'admin' ? tab : undefined);
-    const path = view === 'admin' && tab ? `/admin/${tab}` : view === 'admin' ? '/admin' : '/';
+    const path: string = view === 'admin' && tab ? `/admin/${tab}` : VIEW_TO_PATH[view];
     if (window.location.pathname !== path) {
       history.pushState(null, '', path);
     }
@@ -60,14 +88,6 @@ export default function SpaApp() {
   }, []);
 
   useEffect(() => {
-    localStorage.setItem('aws-access-bridge-page-size', pageSize.toString());
-  }, [pageSize]);
-
-  useEffect(() => {
-    sessionStorage.setItem('aws-access-bridge-current-page', currentPage.toString());
-  }, [currentPage]);
-
-  useEffect(() => {
     const checkAuth = async () => {
       try {
         const response = await fetch('/api/user/me');
@@ -86,7 +106,7 @@ export default function SpaApp() {
         setIsAuthorized(false);
       }
     };
-    void checkAuth();
+    checkAuth();
   }, []);
 
   useEffect(() => {
@@ -113,7 +133,7 @@ export default function SpaApp() {
               borderTopColor: 'transparent',
               margin: '0 auto 16px',
             }}
-          />
+          ></div>
           <p className="text-gray-400">Loading...</p>
         </div>
       </div>
@@ -128,7 +148,7 @@ export default function SpaApp() {
     <div className="bg-gray-900 min-h-screen text-white">
       {isDemoMode && (
         <div className="bg-gradient-to-r from-yellow-500 to-amber-500 text-black text-center py-2 font-semibold text-sm sticky top-0 z-50 shadow-md">
-          Demo Mode - data shown is for demonstration purposes only. Admin operations are disabled.
+          Demo Mode — Data shown is for demonstration purposes only. Admin operations are disabled.
         </div>
       )}
       <SpaNavbar isSuperAdmin={isSuperAdmin} currentView={currentView} setCurrentView={navigateTo} userEmail={userEmail} />
@@ -136,6 +156,16 @@ export default function SpaApp() {
         <div key={currentView} className="animate-fade-in-up">
           {currentView === 'admin' && isSuperAdmin ? (
             <AdminPage activeTab={adminTab} onTabChange={handleAdminTabChange} />
+          ) : currentView === 'costs' ? (
+            <div>
+              <h2 className="text-2xl font-bold mb-6 text-gray-100">Cost Analytics</h2>
+              <CostDashboard />
+            </div>
+          ) : currentView === 'resources' ? (
+            <div>
+              <h2 className="text-2xl font-bold mb-6 text-gray-100">Resource Inventory</h2>
+              <ResourceInventory />
+            </div>
           ) : (
             <>
               <div className="flex items-center mb-6 gap-4">
@@ -153,8 +183,8 @@ export default function SpaApp() {
                     type="text"
                     placeholder="Search by account id or nickname"
                     value={searchTerm}
-                    onChange={(event) => {
-                      setSearchTerm(event.target.value);
+                    onChange={(e) => {
+                      setSearchTerm(e.target.value);
                       setCurrentPage(1);
                     }}
                     className="w-full text-white placeholder-gray-500 focus:outline-none"
@@ -176,6 +206,14 @@ export default function SpaApp() {
                     className="flex items-center gap-1.5 text-gray-300 hover:text-white transition-colors"
                     style={{ padding: '10px 12px', background: '#1e2433', borderRadius: '8px', border: 'none', cursor: 'pointer' }}
                   >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
+                      />
+                    </svg>
                     Filters
                   </button>
                   {filterOpen && (
@@ -188,8 +226,8 @@ export default function SpaApp() {
                           <input
                             type="checkbox"
                             checked={showHidden}
-                            onChange={(event) => {
-                              setShowHidden(event.target.checked);
+                            onChange={(e) => {
+                              setShowHidden(e.target.checked);
                               setCurrentPage(1);
                             }}
                             className="mr-2.5 rounded"
@@ -201,88 +239,102 @@ export default function SpaApp() {
                   )}
                 </div>
               </div>
-              <PaginationBar
-                currentPage={currentPage}
-                pageSize={pageSize}
-                searchTerm={searchTerm}
-                totalAccounts={totalAccounts}
-                setCurrentPage={setCurrentPage}
-                setPageSize={setPageSize}
-              />
+              <div className="mb-4">
+                {!searchTerm.trim() && (
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <label className="text-sm text-gray-400">Per page:</label>
+                      <select
+                        value={pageSize}
+                        onChange={(e) => setPageSize(Number(e.target.value))}
+                        className="text-white text-sm focus:outline-none"
+                        style={{ padding: '6px 8px', background: '#252d3d', borderRadius: '6px', border: 'none' }}
+                      >
+                        <option value={10}>10</option>
+                        <option value={20}>20</option>
+                        <option value={50}>50</option>
+                        <option value={100}>100</option>
+                      </select>
+                    </div>
+                    {totalAccounts > 0 && (
+                      <>
+                        <div className="text-sm text-gray-500">
+                          {Math.min((currentPage - 1) * pageSize + 1, totalAccounts)}&ndash;
+                          {Math.min(currentPage * pageSize, totalAccounts)} of {totalAccounts}
+                        </div>
+                        {Math.ceil(totalAccounts / pageSize) > 1 && (
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                              disabled={currentPage === 1}
+                              className="text-sm text-white disabled:opacity-40 disabled:cursor-not-allowed"
+                              style={{
+                                padding: '6px 10px',
+                                background: '#252d3d',
+                                borderRadius: '6px',
+                                border: 'none',
+                                cursor: currentPage === 1 ? 'default' : 'pointer',
+                              }}
+                            >
+                              Prev
+                            </button>
+                            {Array.from({ length: Math.min(5, Math.ceil(totalAccounts / pageSize)) }, (_, i) => {
+                              const totalPages = Math.ceil(totalAccounts / pageSize);
+                              let pageNum;
+                              if (totalPages <= 5) pageNum = i + 1;
+                              else if (currentPage <= 3) pageNum = i + 1;
+                              else if (currentPage >= totalPages - 2) pageNum = totalPages - 4 + i;
+                              else pageNum = currentPage - 2 + i;
+                              return (
+                                <button
+                                  key={pageNum}
+                                  onClick={() => setCurrentPage(pageNum)}
+                                  className="text-sm"
+                                  style={{
+                                    padding: '6px 12px',
+                                    background: currentPage === pageNum ? '#2563eb' : '#252d3d',
+                                    color: currentPage === pageNum ? '#fff' : '#d1d5db',
+                                    borderRadius: '6px',
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                  }}
+                                >
+                                  {pageNum}
+                                </button>
+                              );
+                            })}
+                            <button
+                              onClick={() => setCurrentPage(Math.min(Math.ceil(totalAccounts / pageSize), currentPage + 1))}
+                              disabled={currentPage === Math.ceil(totalAccounts / pageSize)}
+                              className="text-sm text-white disabled:opacity-40 disabled:cursor-not-allowed"
+                              style={{
+                                padding: '6px 10px',
+                                background: '#252d3d',
+                                borderRadius: '6px',
+                                border: 'none',
+                                cursor: currentPage === Math.ceil(totalAccounts / pageSize) ? 'default' : 'pointer',
+                              }}
+                            >
+                              Next
+                            </button>
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
               <AccountList
                 showHidden={showHidden}
                 searchTerm={searchTerm}
                 pageSize={pageSize}
                 currentPage={currentPage}
-                setTotalAccounts={setTotalAccounts}
+                setTotalAccounts={handleSetTotalAccounts}
               />
             </>
           )}
         </div>
       </div>
-    </div>
-  );
-}
-
-function PaginationBar({
-  currentPage,
-  pageSize,
-  searchTerm,
-  totalAccounts,
-  setCurrentPage,
-  setPageSize,
-}: {
-  currentPage: number;
-  pageSize: number;
-  searchTerm: string;
-  totalAccounts: number;
-  setCurrentPage: (page: number) => void;
-  setPageSize: (size: number) => void;
-}) {
-  if (searchTerm.trim()) return null;
-  const totalPages = Math.ceil(totalAccounts / pageSize);
-
-  return (
-    <div className="mb-4 flex items-center justify-between">
-      <div className="flex items-center gap-2">
-        <label className="text-sm text-gray-400">Per page:</label>
-        <select
-          value={pageSize}
-          onChange={(event) => setPageSize(Number(event.target.value))}
-          className="text-white text-sm focus:outline-none"
-          style={{ padding: '6px 8px', background: '#252d3d', borderRadius: '6px', border: 'none' }}
-        >
-          <option value={10}>10</option>
-          <option value={20}>20</option>
-          <option value={50}>50</option>
-          <option value={100}>100</option>
-        </select>
-      </div>
-      {totalAccounts > 0 && (
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-gray-500">
-            {Math.min((currentPage - 1) * pageSize + 1, totalAccounts)}-{Math.min(currentPage * pageSize, totalAccounts)} of {totalAccounts}
-          </span>
-          {totalPages > 1 && (
-            <>
-              <button
-                onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                disabled={currentPage === 1}
-                className="rounded bg-gray-800 px-3 py-1 text-sm disabled:opacity-40"
-              >
-                Prev
-              </button>
-              <button
-                onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                disabled={currentPage === totalPages}
-                className="rounded bg-gray-800 px-3 py-1 text-sm disabled:opacity-40"
-              >
-                Next
-              </button>
-            </>
-          )}
-        </div>
-      )}
     </div>
   );
 }
@@ -295,22 +347,32 @@ function SpaNavbar({
 }: {
   isSuperAdmin: boolean;
   currentView: View;
-  setCurrentView: (view: View, tab?: string) => void;
+  setCurrentView: (view: View) => void;
   userEmail: string;
 }) {
   return (
     <nav
       className="text-white flex justify-between items-center"
-      style={{ padding: '12px 24px', background: 'rgba(17, 24, 39, 0.95)', borderBottom: '1px solid #1e2433' }}
+      style={{
+        padding: '12px 24px',
+        background: 'rgba(17, 24, 39, 0.95)',
+        backdropFilter: 'blur(8px)',
+        borderBottom: '1px solid #1e2433',
+        position: 'sticky',
+        top: 0,
+        zIndex: 40,
+      }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: '32px' }}>
-        <div style={{ fontSize: '20px', fontWeight: 700 }}>
+        <div style={{ fontSize: '20px', fontWeight: 700, letterSpacing: '-0.025em' }}>
           <span style={{ color: '#60a5fa' }}>AWS</span> AccessBridge
         </div>
         <div style={{ display: 'flex', gap: '4px', background: 'rgba(30,36,51,0.5)', padding: '4px', borderRadius: '8px' }}>
-          <NavTab active={currentView === 'accounts'} onClick={() => setCurrentView('accounts')}>
-            Accounts
-          </NavTab>
+          {(['accounts', 'costs', 'resources'] as const).map((view) => (
+            <NavTab key={view} active={currentView === view} onClick={() => setCurrentView(view)}>
+              {view.charAt(0).toUpperCase() + view.slice(1)}
+            </NavTab>
+          ))}
           {isSuperAdmin && (
             <NavTab active={currentView === 'admin'} onClick={() => setCurrentView('admin')}>
               Admin
@@ -321,7 +383,14 @@ function SpaNavbar({
       <div style={{ fontSize: '14px', display: 'flex', alignItems: 'center', gap: '12px' }}>
         {isSuperAdmin && (
           <span
-            style={{ background: 'rgba(245,158,11,0.15)', color: '#fbbf24', padding: '2px 10px', borderRadius: '9999px', fontSize: '12px' }}
+            style={{
+              background: 'rgba(245,158,11,0.15)',
+              color: '#fbbf24',
+              padding: '2px 10px',
+              borderRadius: '9999px',
+              fontSize: '12px',
+              fontWeight: 500,
+            }}
           >
             ADMIN
           </span>
@@ -333,16 +402,22 @@ function SpaNavbar({
 }
 
 function NavTab({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+  const [hovered, setHovered] = useState(false);
   return (
     <button
       onClick={onClick}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
       style={{
         padding: '6px 16px',
         borderRadius: '6px',
+        fontSize: '14px',
+        fontWeight: 500,
         border: 'none',
         cursor: 'pointer',
-        background: active ? '#2563eb' : 'transparent',
-        color: active ? '#fff' : '#9ca3af',
+        transition: 'all 0.15s',
+        background: active ? '#2563eb' : hovered ? 'rgba(55,65,81,0.5)' : 'transparent',
+        color: active ? '#fff' : hovered ? '#fff' : '#9ca3af',
       }}
     >
       {children}
