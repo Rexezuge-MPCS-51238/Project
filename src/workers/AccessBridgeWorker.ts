@@ -3,6 +3,11 @@ import { fromHono, HonoOpenAPIRouterType } from 'chanfana';
 import { Hono } from 'hono';
 import {
   AssumeRoleRoute,
+  CleanupOrphanedDataRoute,
+  CreateTeamRoute,
+  CreateTokenRoute,
+  DeleteTeamRoute,
+  DeleteTokenRoute,
   DeleteRoleConfigRoute,
   FavoriteAccountRoute,
   FederateRoute,
@@ -12,9 +17,15 @@ import {
   GrantAccessRoute,
   HideRoleRoute,
   ListAccountRolesRoute,
+  ListAuditLogsRoute,
   ListAssumablesRoute,
+  ListTeamAccountsRoute,
+  ListTeamMembersRoute,
+  ListTeamsRoute,
   RemoveAccountNicknameRoute,
   RemoveCredentialRelationshipRoute,
+  RemoveTeamAccountRoute,
+  RemoveTeamMemberRoute,
   RevokeAccessRoute,
   SearchAccountsRoute,
   SetAccountNicknameRoute,
@@ -22,9 +33,14 @@ import {
   StoreCredentialRelationshipRoute,
   StoreCredentialRoute,
   TestCredentialChainRoute,
+  AddTeamAccountRoute,
+  AddTeamMemberRoute,
   UnfavoriteAccountRoute,
   UnhideRoleRoute,
+  UpdateTeamMemberRoleRoute,
+  UpdateTeamNameRoute,
   ValidateCredentialsRoute,
+  ListTokensRoute,
 } from '@/endpoints';
 import { MiddlewareHandlers } from '@/middleware';
 import { SPA_HTML } from '@/generated/spa-shell';
@@ -38,6 +54,10 @@ class AccessBridgeWorker extends AbstractWorker {
     const app: Hono<{ Bindings: Env }> = new Hono<{ Bindings: Env }>();
 
     app.use('*', MiddlewareHandlers.hmacValidation());
+    app.use('/api/*', MiddlewareHandlers.activityAudit());
+    app.use('/federate', MiddlewareHandlers.activityAudit());
+    app.use('/api/*', MiddlewareHandlers.authentication());
+    app.use('/federate', MiddlewareHandlers.authentication());
 
     const openapi: HonoOpenAPIRouterType<{ Bindings: Env }> = fromHono(app, {
       docs_url: '/docs',
@@ -56,6 +76,9 @@ class AccessBridgeWorker extends AbstractWorker {
     openapi.delete('/api/user/favorites', UnfavoriteAccountRoute);
     openapi.post('/api/user/assumable/hidden', HideRoleRoute);
     openapi.delete('/api/user/assumable/hidden', UnhideRoleRoute);
+    openapi.post('/api/user/token', CreateTokenRoute);
+    openapi.delete('/api/user/token', DeleteTokenRoute);
+    openapi.get('/api/user/tokens', ListTokensRoute);
 
     openapi.post('/api/admin/credentials', StoreCredentialRoute);
     openapi.post('/api/admin/credentials/relationship', StoreCredentialRelationshipRoute);
@@ -69,6 +92,21 @@ class AccessBridgeWorker extends AbstractWorker {
     openapi.post('/api/admin/credentials/validate', ValidateCredentialsRoute);
     openapi.post('/api/admin/credentials/test-chain', TestCredentialChainRoute);
     openapi.post('/api/admin/account/roles', ListAccountRolesRoute);
+    openapi.get('/api/admin/audit-logs', ListAuditLogsRoute);
+
+    openapi.post('/api/admin/team', CreateTeamRoute);
+    openapi.delete('/api/admin/team', DeleteTeamRoute);
+    openapi.get('/api/admin/teams', ListTeamsRoute);
+    openapi.put('/api/admin/team/name', UpdateTeamNameRoute);
+    openapi.post('/api/admin/team/member', AddTeamMemberRoute);
+    openapi.delete('/api/admin/team/member', RemoveTeamMemberRoute);
+    openapi.get('/api/admin/team/members', ListTeamMembersRoute);
+    openapi.put('/api/admin/team/member/role', UpdateTeamMemberRoleRoute);
+    openapi.post('/api/admin/team/account', AddTeamAccountRoute);
+    openapi.delete('/api/admin/team/account', RemoveTeamAccountRoute);
+    openapi.get('/api/admin/team/accounts', ListTeamAccountsRoute);
+
+    openapi.post('/api/admin/maintenance/cleanup-orphaned', CleanupOrphanedDataRoute);
 
     app.get('*', (c) => {
       const path: string = new URL(c.req.url).pathname;

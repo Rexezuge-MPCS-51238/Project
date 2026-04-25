@@ -1,15 +1,13 @@
 import { OpenAPIRoute } from 'chanfana';
 import { Context } from 'hono';
 import type { StatusCode } from 'hono/utils/http-status';
-import { EmailValidationUtil, BaseUrlUtil } from '@/utils';
+import { BaseUrlUtil } from '@/utils';
 import { DefaultInternalServerError, InternalServerError, IServiceError } from '@/error';
-import { D1_SESSION_CONSTRAINT_FIRST_UNCONSTRAINED } from '@/constants';
+import { D1_SESSION_CONSTRAINT_FIRST_UNCONSTRAINED, DEFAULT_DEMO_MODE } from '@/constants';
 
 abstract class IActivityAPIRoute<TRequest extends IRequest, TResponse extends IResponse, TEnv extends IEnv> extends OpenAPIRoute {
   async handle(c: ActivityContext<TEnv>) {
     try {
-      const userEmail: string = await this.authenticateUserIdentity(c);
-      c.set('AuthenticatedUserEmailAddress', userEmail);
       let body: unknown = {};
       try {
         body = await c.req.json();
@@ -21,12 +19,12 @@ abstract class IActivityAPIRoute<TRequest extends IRequest, TResponse extends IR
       const response: TResponse | ExtendedResponse<TResponse> = await this.handleRequest(request, env, c);
       if (response && typeof response === 'object' && ('body' in response || 'statusCode' in response || 'headers' in response)) {
         const extendedResponse: ExtendedResponse<TResponse> = response as ExtendedResponse<TResponse>;
-        const statusCode: StatusCode = extendedResponse.statusCode || 200;
+        const statusCode: number = extendedResponse.statusCode || 200;
         const headers: Record<string, string> = extendedResponse.headers || {};
         Object.entries(headers).forEach(([key, value]) => {
           c.header(key, value);
         });
-        c.status(statusCode);
+        c.status(statusCode as StatusCode);
         if (statusCode >= 300 && statusCode < 400) {
           return c.body(null);
         }
@@ -65,8 +63,9 @@ abstract class IActivityAPIRoute<TRequest extends IRequest, TResponse extends IR
     return BaseUrlUtil.getBaseUrl(c.req.raw);
   }
 
-  private async authenticateUserIdentity(c: ActivityContext<TEnv>): Promise<string> {
-    return await EmailValidationUtil.getAuthenticatedUserEmail(c.req.raw, c.env.TEAM_DOMAIN, c.env.POLICY_AUD);
+  protected isDemoMode(c: ActivityContext<TEnv>): boolean {
+    const env: TEnv = c.env as TEnv;
+    return (env.DEMO_MODE || DEFAULT_DEMO_MODE) === 'true';
   }
 }
 
@@ -86,6 +85,7 @@ interface ExtendedResponse<TResponse extends IResponse> {
 interface IEnv {
   TEAM_DOMAIN?: string | undefined;
   POLICY_AUD?: string | undefined;
+  DEMO_MODE?: string | undefined;
   Variables: {
     AuthenticatedUserEmailAddress: string;
   };

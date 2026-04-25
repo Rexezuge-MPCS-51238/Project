@@ -1,8 +1,10 @@
 export * from './ConfigurationDefaults';
 export * from './Configurations';
+export * from './DemoMode';
 export * from './Headers';
 export * from './Hostnames';
 export * from './RoleSessionNames';
+export * from './AuditActions';
 
 export * from './d1/SessionConstraint';
 

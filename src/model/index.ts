@@ -2,8 +2,12 @@ export type { AccessableAccount, AccessableAccountInternal } from './AccessableA
 export type { AccessKeys, AccessKeysWithExpiration } from './AccessKeys';
 export type { AssumableRole, AssumableRoleInternal } from './AssumableRoles';
 export type { AssumableAccount, AssumableAccountsMap, AssumableAccountsResponse } from './AssumableAccount';
+export type { AuditLog, AuditLogInternal } from './AuditLog';
 export type { Credential, CredentialInternal } from './Credential';
 export type { CredentialCache } from './CredentialCache';
 export type { CredentialChain } from './CredentialChain';
 export type { RoleConfig, RoleConfigInternal } from './RoleConfig';
+export type { Team, TeamInternal } from './Team';
+export type { TeamMember, TeamMemberInternal } from './TeamMember';
+export type { UserAccessToken, UserAccessTokenMetadata, UserAccessTokenInternal } from './UserAccessToken';
 export type { UserMetadata, UserMetadataInternal } from './UserMetadata';

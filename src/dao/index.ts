@@ -1,9 +1,14 @@
 export { AssumableRolesDAO } from './AssumableRolesDAO';
+export { AuditLogDAO } from './AuditLogDAO';
 export { AwsAccountsDAO } from './AwsAccountsDAO';
 export { CredentialsCacheDAO } from './CredentialsCacheDAO';
 export { CredentialsDAO } from './CredentialsDAO';
 export { EnhancedCredentialsDAO } from './EnhancedCredentialsDAO';
 export { IKeyValueDAO } from './IKeyValueDAO';
 export { RoleConfigsDAO } from './RoleConfigsDAO';
+export { TeamAccountsDAO } from './TeamAccountsDAO';
+export { TeamMembersDAO } from './TeamMembersDAO';
+export { TeamsDAO } from './TeamsDAO';
+export { UserAccessTokenDAO } from './UserAccessTokenDAO';
 export { UserFavoriteAccountsDAO } from './UserFavoriteAccountsDAO';
 export { UserMetadataDAO } from './UserMetadataDAO';
