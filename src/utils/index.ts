@@ -7,3 +7,4 @@ export { EmailValidationUtil } from './EmailValidationUtil';
 export { ErrorDeserializationUtil } from './ErrorDeserializationUtil';
 export { ErrorTranslationUtil } from './ErrorTranslationUtil';
 export { TimestampUtil } from './TimestampUtil';
+export { InternalRequestHelper } from './helpers/InternalRequestHelper';
