@@ -1,0 +1,75 @@
+{
+  // "$version": 1766288169,
+  // "$minimumVersion": 1766030299,
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "aws-access-bridge",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2025-11-29",
+  "compatibility_flags": ["nodejs_compat"],
+  "preview_urls": false,
+  "workers_dev": true,
+  "minify": true,
+  "observability": {
+    "logs": {
+      "enabled": true,
+      "head_sampling_rate": 1,
+      "invocation_logs": true,
+      "persist": true,
+    },
+    "traces": {
+      "enabled": false,
+      "persist": true,
+      "head_sampling_rate": 1,
+    },
+  },
+  "routes": [],
+  "placement": {
+    "mode": "off",
+  },
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS",
+  },
+  "services": [
+    {
+      "binding": "SELF",
+      "service": "aws-access-bridge",
+    },
+  ],
+  "d1_databases": [
+    {
+      "binding": "AccessBridgeDB",
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "database_name": "aws-access-bridge-db",
+    },
+  ],
+  "kv_namespaces": [
+    {
+      "binding": "AccessBridgeKV",
+      "id": "00000000000000000000000000000000",
+      // "kv_name": "aws-access-bridge-kv",
+    },
+  ],
+  "secrets_store_secrets": [
+    {
+      "binding": "AES_ENCRYPTION_KEY_SECRET",
+      "store_id": "00000000000000000000000000000000",
+      "secret_name": "aws-access-bridge-aes-encryption-key",
+    },
+    {
+      "binding": "INTERNAL_HMAC_SECRET",
+      "store_id": "00000000000000000000000000000000",
+      "secret_name": "aws-access-bridge-internal-hmac-secret",
+    },
+  ],
+  "vars": {
+    "POLICY_AUD": "you-cloudflare-zero-trust-application-aud",
+    "TEAM_DOMAIN": "https://your-cloudflare-zero-trust-team-domain.cloudflareaccess.com",
+    "MAX_TOKENS_PER_USER": "5",
+    "MAX_TOKEN_EXPIRY_DAYS": "90",
+    "PRINCIPAL_TRUST_CHAIN_LIMIT": "3",
+  },
+  "triggers": {
+    "crons": ["*/10 * * * *"],
+  },
+}
